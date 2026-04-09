@@ -122,22 +122,34 @@ async function handleGetTabs() {
  * @param {Object} payload - { urls: string[] }  — list of URLs to match
  */
 async function handleCloseTabs({ urls = [] } = {}) {
-  // Extract just the hostname from each URL we want to match against
-  const targetHostnames = urls.map(u => {
-    try { return new URL(u).hostname; }
-    catch { return null; }
-  }).filter(Boolean);
+  // Split URLs into two groups: file:// URLs (match by exact URL since they
+  // have no hostname) and regular URLs (match by hostname as before).
+  const targetHostnames = [];
+  const targetExactUrls = new Set();
+
+  for (const u of urls) {
+    if (u.startsWith('file://')) {
+      targetExactUrls.add(u);
+    } else {
+      try { targetHostnames.push(new URL(u).hostname); }
+      catch { /* skip unparseable URLs */ }
+    }
+  }
 
   const allTabs = await chrome.tabs.query({});
 
-  // Find tabs whose hostname matches any of the targets
+  // Find tabs that match either by hostname or exact URL
   const matchingTabIds = allTabs
     .filter(tab => {
+      const tabUrl = tab.url || '';
+      // Exact match for file:// URLs
+      if (tabUrl.startsWith('file://') && targetExactUrls.has(tabUrl)) return true;
+      // Hostname match for regular URLs
       try {
-        const tabHostname = new URL(tab.url).hostname;
-        return targetHostnames.includes(tabHostname);
+        const tabHostname = new URL(tabUrl).hostname;
+        return tabHostname && targetHostnames.includes(tabHostname);
       } catch {
-        return false; // Skip tabs with non-parseable URLs (e.g. chrome:// pages)
+        return false;
       }
     })
     .map(tab => tab.id);
