@@ -81,6 +81,804 @@ header {
   text-transform: uppercase;
 }
 
+/* ---- Quick links ---- */
+.quick-links-section {
+  margin-bottom: 34px;
+  padding: 0;
+  position: relative;
+}
+
+.quick-links-header-row,
+.quick-links-empty,
+.quick-links-scroller {
+  position: relative;
+  z-index: 1;
+}
+
+.quick-links-header-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.quick-links-heading {
+  margin: 0;
+  flex: 1;
+  gap: 10px;
+}
+
+.quick-links-heading h2 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: rgba(154, 145, 138, 0.88);
+}
+
+.quick-links-heading .section-line {
+  background: linear-gradient(90deg, rgba(232, 226, 218, 0.8), rgba(232, 226, 218, 0));
+}
+
+.quick-links-heading .section-count {
+  display: none;
+}
+
+.quick-links-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  position: relative;
+  opacity: 0.3;
+  transition: opacity 0.18s ease;
+}
+
+.quick-links-controls::before {
+  content: '';
+  position: absolute;
+  inset: -8px -10px;
+}
+
+.quick-links-controls > * {
+  position: relative;
+  z-index: 1;
+}
+
+.quick-links-controls:hover,
+.quick-links-controls:focus-within {
+  opacity: 1;
+}
+
+.quick-links-row-toggle {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 226, 218, 0.75);
+  background: rgba(255, 253, 249, 0.58);
+}
+
+.quick-links-row-btn {
+  font: inherit;
+  font-size: 11px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.quick-links-row-btn:hover {
+  color: var(--ink);
+}
+
+.quick-links-row-btn.active {
+  background: rgba(26, 22, 19, 0.9);
+  color: var(--paper);
+}
+
+.shortcut-add-btn {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.58);
+  border-color: rgba(232, 226, 218, 0.78);
+  color: var(--muted);
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.quick-links-controls:hover .shortcut-add-btn,
+.quick-links-controls:focus-within .shortcut-add-btn,
+.shortcut-add-btn:hover,
+.shortcut-add-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(154, 145, 138, 0.24);
+  color: var(--ink);
+}
+
+.quick-links-empty {
+  padding: 4px 0 10px;
+  border: none;
+  background: none;
+  border-radius: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  max-width: 360px;
+}
+
+.quick-links-empty strong {
+  display: block;
+  color: var(--ink);
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.quick-links-scroller {
+  overflow: visible;
+  padding: 4px 0 14px;
+  margin: 0;
+}
+
+.quick-links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 96px));
+  gap: 18px 14px;
+  align-items: start;
+  align-content: start;
+  justify-content: start;
+}
+
+.shortcut-card {
+  min-height: 0;
+  border: none;
+  background: transparent;
+  padding: 0;
+  position: relative;
+  width: 96px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.shortcut-card.dragging {
+  opacity: 0.4;
+}
+
+.shortcut-card-main {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font: inherit;
+  color: inherit;
+  text-align: center;
+}
+
+.shortcut-card-menu-shell {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  z-index: 4;
+}
+
+.shortcut-card-menu-toggle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(232, 226, 218, 0.88);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 18px rgba(26, 22, 19, 0.08);
+  color: rgba(154, 145, 138, 0.95);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(2px) scale(0.96);
+  transition:
+    color 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.shortcut-card-menu-toggle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.shortcut-card:hover .shortcut-card-menu-toggle,
+.shortcut-card:focus-within .shortcut-card-menu-toggle,
+.shortcut-card-menu-toggle[aria-expanded='true'] {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.shortcut-card-menu-toggle:hover,
+.shortcut-card-menu-toggle[aria-expanded='true'] {
+  color: var(--ink);
+  border-color: rgba(26, 22, 19, 0.16);
+  background: rgba(255, 255, 255, 1);
+}
+
+.shortcut-card-menu {
+  position: absolute;
+  top: 30px;
+  right: 0;
+  min-width: 154px;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(232, 226, 218, 0.95);
+  background: rgba(255, 253, 249, 0.98);
+  box-shadow:
+    0 22px 36px rgba(26, 22, 19, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.shortcut-card-menu[hidden] {
+  display: none;
+}
+
+.shortcut-card-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shortcut-card-menu-item svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.shortcut-card-menu-item:hover {
+  background: rgba(232, 226, 218, 0.45);
+}
+
+.shortcut-card-menu-item.danger {
+  color: var(--status-abandoned);
+}
+
+.shortcut-logo,
+.shortcut-logo-preview-badge,
+.shortcut-logo-crop-badge {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  border: 1px solid rgba(232, 226, 218, 0.92);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(248, 245, 240, 0.9));
+  box-shadow:
+    0 10px 24px rgba(26, 22, 19, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.shortcut-logo-preview {
+  display: inline-flex;
+}
+
+.shortcut-logo-preview-badge {
+  width: 64px;
+  height: 64px;
+}
+
+.shortcut-logo-crop-badge {
+  width: 196px;
+  height: 196px;
+  border-radius: 34px;
+  box-shadow:
+    0 26px 44px rgba(26, 22, 19, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.shortcut-card:hover .shortcut-logo,
+.shortcut-card:focus-within .shortcut-logo {
+  transform: translateY(-2px);
+  border-color: rgba(200, 113, 58, 0.24);
+  box-shadow:
+    0 16px 28px rgba(26, 22, 19, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.shortcut-card.drop-target .shortcut-logo {
+  box-shadow:
+    0 0 0 3px rgba(90, 122, 98, 0.11),
+    0 16px 28px rgba(26, 22, 19, 0.08);
+  border-color: rgba(90, 122, 98, 0.3);
+}
+
+.shortcut-card.dragging .shortcut-logo {
+  transform: scale(0.96);
+}
+
+.shortcut-logo-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.shortcut-logo-media {
+  position: absolute;
+  width: 72%;
+  height: 72%;
+  display: block;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.shortcut-logo-fallback {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Newsreader', serif;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--ink);
+  opacity: 0;
+}
+
+.shortcut-logo.show-fallback .shortcut-logo-fallback,
+.shortcut-logo-preview-badge.show-fallback .shortcut-logo-fallback,
+.shortcut-logo-crop-badge.show-fallback .shortcut-logo-fallback {
+  opacity: 1;
+}
+
+.shortcut-card-title {
+  width: 100%;
+  padding: 0 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(26, 22, 19, 0.92);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shortcut-modal-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 84px 24px 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.shortcut-logo-editor-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 72;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.shortcut-logo-editor-shell.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.shortcut-modal-shell.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.shortcut-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(248, 245, 240, 0.66);
+  backdrop-filter: blur(8px);
+}
+
+.shortcut-logo-editor-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(248, 245, 240, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+body.shortcut-modal-open {
+  overflow: hidden;
+}
+
+.shortcut-editor {
+  position: relative;
+  z-index: 1;
+  width: min(460px, calc(100vw - 32px));
+  margin: 0;
+  box-shadow: 0 12px 30px rgba(26, 22, 19, 0.035);
+  padding: 20px 20px 18px;
+  border: 1px solid rgba(232, 226, 218, 0.95);
+  border-radius: 22px;
+  background: rgba(255, 253, 249, 0.96);
+  box-shadow:
+    0 28px 70px rgba(26, 22, 19, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.shortcut-editor-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.shortcut-logo-editor {
+  position: relative;
+  z-index: 1;
+  width: min(540px, calc(100vw - 32px));
+  margin: 0;
+  padding: 22px 22px 20px;
+  border: 1px solid rgba(232, 226, 218, 0.95);
+  border-radius: 26px;
+  background: rgba(255, 253, 249, 0.97);
+  box-shadow:
+    0 34px 84px rgba(26, 22, 19, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.shortcut-logo-editor-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.shortcut-editor-header h3,
+.shortcut-logo-editor-header h3 {
+  font-family: 'Newsreader', serif;
+  font-weight: 400;
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+.shortcut-editor-header p,
+.shortcut-logo-editor-header p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 380px;
+}
+
+.shortcut-editor-close {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(232, 226, 218, 0.95);
+  background: rgba(248, 245, 240, 0.8);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.shortcut-editor-close svg {
+  width: 15px;
+  height: 15px;
+}
+
+.shortcut-editor-close:hover {
+  color: var(--ink);
+  border-color: rgba(26, 22, 19, 0.18);
+  transform: rotate(90deg);
+}
+
+.shortcut-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.shortcut-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.shortcut-field span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.shortcut-field input {
+  width: 100%;
+  border: 1px solid rgba(232, 226, 218, 0.95);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.98);
+  padding: 12px 13px;
+  font: inherit;
+  color: var(--ink);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.shortcut-field input:focus {
+  outline: none;
+  border-color: rgba(200, 113, 58, 0.34);
+  box-shadow: 0 0 0 4px rgba(200, 113, 58, 0.06);
+}
+
+.shortcut-logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(154, 145, 138, 0.18);
+}
+
+.shortcut-logo-preview-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.shortcut-logo-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.shortcut-logo-copy strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shortcut-logo-copy span {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.shortcut-logo-actions,
+.shortcut-editor-cta,
+.shortcut-logo-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.shortcut-logo-crop-shell {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(232, 226, 218, 0.95);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(248, 245, 240, 0.92)),
+    radial-gradient(circle at top, rgba(200, 113, 58, 0.06), transparent 52%);
+}
+
+.shortcut-logo-crop-stage {
+  display: grid;
+  place-items: center;
+  touch-action: none;
+  user-select: none;
+}
+
+.shortcut-logo-crop-stage.is-draggable {
+  cursor: grab;
+}
+
+.shortcut-logo-crop-stage.is-dragging {
+  cursor: grabbing;
+}
+
+.shortcut-logo-crop-frame {
+  width: 212px;
+  height: 212px;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.shortcut-logo-crop-frame::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 40px;
+  border: 1px dashed rgba(154, 145, 138, 0.26);
+  pointer-events: none;
+}
+
+.shortcut-logo-crop-copy {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.55;
+  text-align: center;
+}
+
+.shortcut-logo-scale-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.shortcut-logo-scale-field span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.shortcut-logo-scale-field input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent-amber);
+}
+
+.ghost-btn,
+.shortcut-delete-btn {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 226, 218, 0.95);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.ghost-btn:hover,
+.shortcut-delete-btn:hover {
+  border-color: rgba(154, 145, 138, 0.26);
+  background: rgba(255, 255, 255, 1);
+}
+
+.ghost-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.shortcut-delete-btn {
+  color: var(--status-abandoned);
+}
+
+.shortcut-editor-error {
+  margin-top: 14px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: rgba(179, 90, 90, 0.08);
+  border: 1px solid rgba(179, 90, 90, 0.18);
+  color: var(--status-abandoned);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.shortcut-logo-editor-error {
+  margin-top: 16px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: rgba(179, 90, 90, 0.08);
+  border: 1px solid rgba(179, 90, 90, 0.18);
+  color: var(--status-abandoned);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.shortcut-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.shortcut-logo-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+@media (max-width: 800px) {
+  .quick-links-section {
+    margin-bottom: 28px;
+  }
+
+  .quick-links-header-row,
+  .shortcut-logo-row,
+  .shortcut-editor-footer,
+  .shortcut-logo-editor-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .quick-links-controls {
+    justify-content: space-between;
+    opacity: 1;
+  }
+
+  .shortcut-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-links-grid {
+    grid-template-columns: repeat(auto-fill, minmax(84px, 84px));
+    gap: 16px 12px;
+  }
+
+  .shortcut-card {
+    width: 84px;
+  }
+
+  .shortcut-modal-shell {
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  .shortcut-logo-editor-shell {
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  .shortcut-editor {
+    width: 100%;
+    border-radius: 22px 22px 14px 14px;
+  }
+
+  .shortcut-logo-editor {
+    width: 100%;
+    border-radius: 24px 24px 14px 14px;
+  }
+
+  .shortcut-logo-crop-frame {
+    width: min(100%, 188px);
+    height: min(100%, 188px);
+  }
+}
+
 /* ---- Tab cleanup banner ---- */
 .tab-cleanup-banner {
   background: linear-gradient(135deg, rgba(200, 113, 58, 0.04), rgba(200, 113, 58, 0.09));

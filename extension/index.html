@@ -29,6 +29,128 @@
   </header>
 
   <!-- ================================================================
+       QUICK LINKS — user-managed shortcuts, Infinity-style
+       Lives under the header and above the tab dashboard
+       ================================================================ -->
+  <section class="quick-links-section" id="quickLinksSection">
+    <div class="quick-links-header-row">
+      <div class="section-header quick-links-heading">
+        <h2>Start Here</h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="quick-links-controls">
+        <button type="button" class="action-btn shortcut-add-btn" data-action="show-shortcut-editor">Add</button>
+      </div>
+    </div>
+
+    <div class="quick-links-empty" id="quickLinksEmpty" style="display:none">
+      <strong>No shortcuts yet.</strong>
+      Add the sites you reach for most and turn this tab into a proper launchpad.
+    </div>
+
+    <div class="quick-links-scroller" id="quickLinksScroller" style="display:none">
+      <div class="quick-links-grid" id="quickLinksGrid"></div>
+    </div>
+  </section>
+
+  <div class="shortcut-modal-shell" id="shortcutModalShell" hidden aria-hidden="true">
+    <div class="shortcut-modal-backdrop" data-action="cancel-shortcut-editor"></div>
+    <form class="shortcut-editor" id="shortcutEditor" role="dialog" aria-modal="true" aria-labelledby="shortcutEditorTitle">
+      <div class="shortcut-editor-header">
+        <div>
+          <h3 id="shortcutEditorTitle">Add shortcut</h3>
+          <p id="shortcutEditorHint">Drop in a URL, rename it if you want, and optionally upload a custom logo.</p>
+        </div>
+        <button type="button" class="shortcut-editor-close" data-action="cancel-shortcut-editor" aria-label="Close shortcut editor">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="shortcut-editor-grid">
+        <label class="shortcut-field">
+          <span>URL</span>
+          <input type="text" id="shortcutUrlInput" placeholder="https://example.com">
+        </label>
+
+        <label class="shortcut-field">
+          <span>Name</span>
+          <input type="text" id="shortcutTitleInput" placeholder="Optional — we can infer one">
+        </label>
+      </div>
+
+      <div class="shortcut-logo-row">
+        <div class="shortcut-logo-preview-wrap">
+          <div class="shortcut-logo-preview" id="shortcutLogoPreview"></div>
+          <div class="shortcut-logo-copy">
+            <strong id="shortcutLogoLabel">Auto logo</strong>
+            <span id="shortcutLogoSubcopy">We try the site's favicon first, then fall back to a letter badge.</span>
+          </div>
+        </div>
+        <div class="shortcut-logo-actions">
+          <button type="button" class="ghost-btn" data-action="show-shortcut-logo-editor">Edit logo</button>
+          <button type="button" class="ghost-btn" data-action="trigger-shortcut-logo-upload">Upload logo</button>
+          <button type="button" class="ghost-btn" data-action="reset-shortcut-logo" id="shortcutResetLogoBtn">Use auto logo</button>
+        </div>
+      </div>
+
+      <input type="file" id="shortcutLogoInput" accept="image/*" hidden>
+      <div class="shortcut-editor-error" id="shortcutEditorError" style="display:none"></div>
+
+      <div class="shortcut-editor-footer">
+        <button type="button" class="shortcut-delete-btn" id="shortcutDeleteBtn" data-action="delete-shortcut" style="display:none">Delete shortcut</button>
+        <div class="shortcut-editor-cta">
+          <button type="button" class="ghost-btn" data-action="cancel-shortcut-editor">Cancel</button>
+          <button type="submit" class="action-btn primary">Save shortcut</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="shortcut-logo-editor-shell" id="shortcutLogoEditorShell" hidden aria-hidden="true">
+    <div class="shortcut-logo-editor-backdrop" data-action="cancel-shortcut-logo-editor"></div>
+    <section class="shortcut-logo-editor" id="shortcutLogoEditor" role="dialog" aria-modal="true" aria-labelledby="shortcutLogoEditorTitle">
+      <div class="shortcut-logo-editor-header">
+        <div>
+          <h3 id="shortcutLogoEditorTitle">Edit logo framing</h3>
+          <p>Drag the logo to re-center it inside the tile, then zoom until it feels balanced.</p>
+        </div>
+        <button type="button" class="shortcut-editor-close" data-action="cancel-shortcut-logo-editor" aria-label="Close logo editor">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="shortcut-logo-crop-shell">
+        <div class="shortcut-logo-crop-stage" id="shortcutLogoCropStage" aria-label="Logo crop stage">
+          <div class="shortcut-logo-crop-frame" id="shortcutLogoCropFrame"></div>
+        </div>
+        <p class="shortcut-logo-crop-copy">Drag inside the tile to shift the logo. Use Fit to snap back to the centered default.</p>
+      </div>
+
+      <label class="shortcut-logo-scale-field" for="shortcutLogoScaleInput">
+        <span>Zoom</span>
+        <input type="range" id="shortcutLogoScaleInput" min="50" max="250" step="1" value="100">
+      </label>
+
+      <div class="shortcut-logo-editor-error" id="shortcutLogoEditorError" style="display:none"></div>
+
+      <div class="shortcut-logo-editor-footer">
+        <div class="shortcut-logo-editor-actions">
+          <button type="button" class="ghost-btn" data-action="reset-shortcut-logo-crop">Reset</button>
+          <button type="button" class="ghost-btn" data-action="fit-shortcut-logo-crop">Fit</button>
+        </div>
+        <div class="shortcut-editor-cta">
+          <button type="button" class="ghost-btn" data-action="cancel-shortcut-logo-editor">Cancel</button>
+          <button type="button" class="action-btn primary" data-action="save-shortcut-logo-crop">Save framing</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================================================================
        TAB OUT DUPES BANNER — appears when you have extra Tab Out tabs open
        Hidden by default; app.js shows it when dupeTabOutCount > 1
        ================================================================ -->
@@ -96,21 +218,6 @@
 
   </div><!-- end .dashboard-columns -->
 
-  <!-- ================================================================
-       FOOTER — global stats + refresh control
-       ================================================================ -->
-  <footer>
-    <div class="footer-stats">
-      <div class="stat">
-        <div class="stat-num" id="statTabs">—</div>
-        <div class="stat-label">Open tabs</div>
-      </div>
-    </div>
-    <div class="last-refresh">
-      <span style="color: var(--muted); font-size: 11px;"><a href="https://github.com/zarazhangrui/tab-out" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Tab Out</a> by <a href="https://x.com/zarazhangrui" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Zara</a></span>
-    </div>
-  </footer>
-
 </div><!-- end .container -->
 
 <!-- ================================================================
@@ -128,6 +235,9 @@
 <!-- Personal config (gitignored) — defines LOCAL_LANDING_PAGE_PATTERNS etc. -->
 <!-- If the file doesn't exist, that's fine — app.js uses sensible defaults. -->
 <script src="config.local.js" onerror="/* no personal config, that's fine */"></script>
+
+<!-- Pure helpers shared between the extension page and Node tests -->
+<script src="shortcuts-core.js"></script>
 
 <!-- Main dashboard logic — loads last so the DOM is ready -->
 <script src="app.js"></script>
