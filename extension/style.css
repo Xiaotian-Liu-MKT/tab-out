@@ -200,6 +200,71 @@ header {
   color: var(--ink);
 }
 
+.shortcut-sync-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 12px;
+  padding: 11px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(232, 226, 218, 0.92);
+  background: rgba(255, 253, 249, 0.82);
+}
+
+.shortcut-sync-banner[hidden] {
+  display: none;
+}
+
+.shortcut-sync-banner.is-dirty {
+  border-color: rgba(200, 113, 58, 0.2);
+  background: linear-gradient(180deg, rgba(255, 250, 245, 0.96), rgba(255, 248, 240, 0.9));
+}
+
+.shortcut-sync-banner.is-conflict {
+  border-color: rgba(179, 90, 90, 0.22);
+  background: linear-gradient(180deg, rgba(255, 248, 248, 0.98), rgba(255, 244, 244, 0.92));
+}
+
+.shortcut-sync-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.shortcut-sync-copy strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.shortcut-sync-copy span {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.shortcut-sync-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.shortcut-sync-banner .ghost-btn {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.shortcut-sync-banner.is-dirty .ghost-btn:hover {
+  border-color: rgba(200, 113, 58, 0.26);
+}
+
+.shortcut-sync-banner.is-conflict .ghost-btn:hover {
+  border-color: rgba(179, 90, 90, 0.26);
+}
+
 .quick-links-empty {
   padding: 4px 0 10px;
   border: none;
@@ -828,6 +893,7 @@ body.shortcut-modal-open {
   }
 
   .quick-links-header-row,
+  .shortcut-sync-banner,
   .shortcut-logo-row,
   .shortcut-editor-footer,
   .shortcut-logo-editor-footer {

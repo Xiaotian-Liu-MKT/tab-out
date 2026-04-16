@@ -294,7 +294,6 @@ let shortcutEditorState = createEmptyShortcutDraft();
 let shortcutEditingId = null;
 let shortcutDragId = null;
 let shortcutSuppressOpenUntil = 0;
-let didAttemptShortcutConfigImport = false;
 let shortcutEditorReturnFocusEl = null;
 let shortcutLogoEditorReturnFocusEl = null;
 let shortcutLogoCropState = createDefaultShortcutLogoTransform();
@@ -302,9 +301,11 @@ let shortcutLogoCropInitialState = createDefaultShortcutLogoTransform();
 let shortcutLogoCropPointer = null;
 let shortcutMenuOpenId = null;
 let shortcutLongPressState = null;
+let shortcutSyncStatus = createEmptyShortcutSyncStatus();
 
 const SHORTCUT_LONG_PRESS_MS = 420;
 const SHORTCUT_LONG_PRESS_MOVE_THRESHOLD = 10;
+const DEFAULT_SHORTCUTS_SYNC_SOURCE_ID = 'tab-out-sync';
 
 function createEmptyShortcutDraft() {
   return {
@@ -334,54 +335,143 @@ function normalizeShortcutLogoTransform(input) {
 function hasShortcutCore() {
   return !!(
     ShortcutCore &&
+    ShortcutCore.buildShortcutSyncSource &&
     ShortcutCore.DEFAULT_SHORTCUT_LOGO_TRANSFORM &&
+    ShortcutCore.getShortcutSyncSignature &&
     ShortcutCore.buildShortcutRecord &&
     ShortcutCore.getShortcutFaviconUrl &&
     ShortcutCore.getShortcutInitial &&
     ShortcutCore.inferShortcutDomain &&
     ShortcutCore.inferShortcutTitle &&
     ShortcutCore.mergeShortcutImports &&
+    ShortcutCore.normalizeShortcutSyncItems &&
     ShortcutCore.normalizeShortcutLogoTransform &&
-    ShortcutCore.moveShortcutItem
+    ShortcutCore.moveShortcutItem &&
+    ShortcutCore.resolveShortcutSyncState
   );
 }
 
-function getConfiguredShortcutImportPayload() {
-  const configuredShortcuts = typeof LOCAL_DEFAULT_SHORTCUTS !== 'undefined' && Array.isArray(LOCAL_DEFAULT_SHORTCUTS)
-    ? LOCAL_DEFAULT_SHORTCUTS
-    : [];
+function createEmptyShortcutSyncStatus() {
+  return {
+    mode: 'clean',
+    title: '',
+    text: '',
+    exportLabel: 'Export sync file',
+    showUseRepo: false,
+    repoSignature: '',
+    localSignature: '',
+    sourceId: DEFAULT_SHORTCUTS_SYNC_SOURCE_ID,
+  };
+}
 
-  if (!configuredShortcuts.length) {
-    return { importId: '', shortcuts: [], prefs: null };
+function buildShortcutSyncStatus(syncState, sourceId) {
+  if (!syncState || syncState.mode === 'clean' || syncState.mode === 'no-repo' || syncState.mode === 'apply-repo') {
+    return createEmptyShortcutSyncStatus();
   }
 
-  const importId = typeof LOCAL_DEFAULT_SHORTCUT_IMPORT_ID === 'string' && LOCAL_DEFAULT_SHORTCUT_IMPORT_ID.trim()
-    ? LOCAL_DEFAULT_SHORTCUT_IMPORT_ID.trim()
-    : 'local-default-shortcuts';
+  if (syncState.mode === 'conflict') {
+    return {
+      mode: 'conflict',
+      title: 'Repo and local shortcuts diverged',
+      text: 'Another computer updated shortcuts.sync.js, and this computer also has local Start Here changes. Export your local snapshot or replace it with the repo version.',
+      exportLabel: 'Export local snapshot',
+      showUseRepo: true,
+      repoSignature: syncState.repoSignature,
+      localSignature: syncState.localSignature,
+      sourceId,
+    };
+  }
 
-  const shortcuts = configuredShortcuts.map((item, index) => {
-    try {
-      return ShortcutCore.buildShortcutRecord({
-        url: item.url,
-        title: item.title,
-        logoMode: item.logoMode,
-        logoDataUrl: item.logoDataUrl,
-        logoTransform: item.logoTransform,
-      }, {
-        id: item.id || `local-shortcut-${index + 1}`,
-        createdAt: item.createdAt || new Date(Date.now() + index).toISOString(),
-      });
-    } catch (err) {
-      console.warn('[tab-out] Skipping invalid local shortcut config:', item, err);
-      return null;
-    }
-  }).filter(Boolean);
+  return {
+    mode: 'dirty',
+    title: 'Local changes are not in repo yet',
+    text: 'This computer has Start Here changes that have not been exported back to shortcuts.sync.js yet.',
+    exportLabel: 'Export sync file',
+    showUseRepo: false,
+    repoSignature: syncState.repoSignature,
+    localSignature: syncState.localSignature,
+    sourceId,
+  };
+}
 
-  const prefs = typeof LOCAL_DEFAULT_SHORTCUT_PREFS !== 'undefined' && LOCAL_DEFAULT_SHORTCUT_PREFS
-    ? { rows: LOCAL_DEFAULT_SHORTCUT_PREFS.rows === 2 ? 2 : 1 }
-    : null;
+function getRepoShortcutSyncPayload() {
+  const sourceId = typeof SYNC_SHORTCUTS_SOURCE_ID === 'string' && SYNC_SHORTCUTS_SOURCE_ID.trim()
+    ? SYNC_SHORTCUTS_SOURCE_ID.trim()
+    : DEFAULT_SHORTCUTS_SYNC_SOURCE_ID;
+  const rawShortcuts = typeof SYNC_SHORTCUTS !== 'undefined' && Array.isArray(SYNC_SHORTCUTS)
+    ? SYNC_SHORTCUTS
+    : [];
+  const shortcuts = ShortcutCore.normalizeShortcutSyncItems(rawShortcuts);
 
-  return { importId, shortcuts, prefs };
+  return {
+    sourceId,
+    shortcuts,
+    signature: ShortcutCore.getShortcutSyncSignature(shortcuts),
+  };
+}
+
+function buildStoredShortcutsFromSync(syncItems) {
+  const shortcuts = ShortcutCore.normalizeShortcutSyncItems(syncItems);
+  const baseTime = Date.now();
+
+  return shortcuts.map((item, index) => ShortcutCore.buildShortcutRecord(item, {
+    id: item.id || `sync-shortcut-${index + 1}`,
+    createdAt: new Date(baseTime + index).toISOString(),
+  }));
+}
+
+async function getShortcutSyncState() {
+  const { shortcutSyncState = {} } = await chrome.storage.local.get('shortcutSyncState');
+  return {
+    lastAppliedRepoSignature: String(shortcutSyncState.lastAppliedRepoSignature || '').trim(),
+  };
+}
+
+async function setShortcutSyncState(nextState) {
+  await chrome.storage.local.set({
+    shortcutSyncState: {
+      lastAppliedRepoSignature: String((nextState && nextState.lastAppliedRepoSignature) || '').trim(),
+    },
+  });
+}
+
+async function applyRepoShortcutSnapshot(repoPayload) {
+  const shortcuts = buildStoredShortcutsFromSync(repoPayload.shortcuts);
+  await chrome.storage.local.set({
+    shortcuts,
+    shortcutSyncState: {
+      lastAppliedRepoSignature: repoPayload.signature,
+    },
+  });
+  shortcutSyncStatus = createEmptyShortcutSyncStatus();
+  return shortcuts;
+}
+
+async function syncShortcutsWithRepoSnapshot() {
+  shortcutSyncStatus = createEmptyShortcutSyncStatus();
+  if (!hasShortcutCore()) return [];
+
+  const repoPayload = getRepoShortcutSyncPayload();
+  const localShortcuts = await getShortcuts();
+  const syncState = await getShortcutSyncState();
+  const resolved = ShortcutCore.resolveShortcutSyncState({
+    repoItems: repoPayload.shortcuts,
+    localItems: localShortcuts,
+    lastAppliedRepoSignature: syncState.lastAppliedRepoSignature,
+  });
+
+  if (resolved.mode === 'apply-repo') {
+    return applyRepoShortcutSnapshot(repoPayload);
+  }
+
+  if (resolved.mode === 'clean' && syncState.lastAppliedRepoSignature !== resolved.repoSignature) {
+    await setShortcutSyncState({
+      lastAppliedRepoSignature: resolved.repoSignature,
+    });
+  }
+
+  shortcutSyncStatus = buildShortcutSyncStatus(resolved, repoPayload.sourceId);
+  return localShortcuts;
 }
 
 function escapeHtml(value) {
@@ -470,51 +560,6 @@ async function setShortcutRows(rows) {
       rows: rows === 2 ? 2 : 1,
     },
   });
-}
-
-async function maybeImportConfiguredShortcuts() {
-  if (didAttemptShortcutConfigImport || !hasShortcutCore()) return;
-  didAttemptShortcutConfigImport = true;
-
-  const payload = getConfiguredShortcutImportPayload();
-  if (!payload.importId || payload.shortcuts.length === 0) return;
-
-  const {
-    shortcuts: storedShortcuts = [],
-    shortcutPrefs: storedPrefs = {},
-    shortcutImportState = {},
-  } = await chrome.storage.local.get(['shortcuts', 'shortcutPrefs', 'shortcutImportState']);
-
-  if (shortcutImportState && shortcutImportState.id === payload.importId) {
-    return;
-  }
-
-  const existing = Array.isArray(storedShortcuts)
-    ? storedShortcuts.map(normalizeStoredShortcut).filter(Boolean)
-    : [];
-
-  const merged = ShortcutCore.mergeShortcutImports(existing, payload.shortcuts);
-  const nextState = {
-    id: payload.importId,
-    importedAt: new Date().toISOString(),
-    count: payload.shortcuts.length,
-  };
-
-  const nextPayload = {
-    shortcutImportState: nextState,
-  };
-
-  if (merged.length !== existing.length || existing.length !== storedShortcuts.length) {
-    nextPayload.shortcuts = merged;
-  }
-
-  if (payload.prefs && typeof storedPrefs.rows === 'undefined') {
-    nextPayload.shortcutPrefs = {
-      rows: payload.prefs.rows === 2 ? 2 : 1,
-    };
-  }
-
-  await chrome.storage.local.set(nextPayload);
 }
 
 function buildShortcutPreview() {
@@ -690,6 +735,27 @@ function renderShortcutLogoEditorState() {
   scaleInput.value = String(Math.round(preview.logoTransform.scale * 100));
 }
 
+function renderShortcutSyncBanner() {
+  const banner = document.getElementById('shortcutSyncBanner');
+  const titleEl = document.getElementById('shortcutSyncTitle');
+  const textEl = document.getElementById('shortcutSyncText');
+  const exportBtn = document.getElementById('shortcutSyncExportBtn');
+  const useRepoBtn = document.getElementById('shortcutSyncUseRepoBtn');
+  if (!banner || !titleEl || !textEl || !exportBtn || !useRepoBtn) return;
+
+  const visible = shortcutSyncStatus.mode === 'dirty' || shortcutSyncStatus.mode === 'conflict';
+  banner.hidden = !visible;
+  banner.classList.toggle('is-dirty', shortcutSyncStatus.mode === 'dirty');
+  banner.classList.toggle('is-conflict', shortcutSyncStatus.mode === 'conflict');
+
+  if (!visible) return;
+
+  titleEl.textContent = shortcutSyncStatus.title;
+  textEl.textContent = shortcutSyncStatus.text;
+  exportBtn.textContent = shortcutSyncStatus.exportLabel;
+  useRepoBtn.hidden = !shortcutSyncStatus.showUseRepo;
+}
+
 function hideShortcutEditor() {
   const fileInput = document.getElementById('shortcutLogoInput');
 
@@ -768,13 +834,12 @@ async function renderQuickLinks() {
     return;
   }
 
-  await maybeImportConfiguredShortcuts();
   section.style.display = 'block';
 
   const emptyEl = document.getElementById('quickLinksEmpty');
   const scroller = document.getElementById('quickLinksScroller');
   const grid = document.getElementById('quickLinksGrid');
-  const shortcuts = await getShortcuts();
+  const shortcuts = await syncShortcutsWithRepoSnapshot();
   const renderedShortcuts = shortcuts.slice();
   section.classList.toggle('has-shortcuts', shortcuts.length > 0);
 
@@ -796,6 +861,8 @@ async function renderQuickLinks() {
   if (grid) {
     grid.innerHTML = renderedShortcuts.map(renderShortcutCard).join('');
   }
+
+  renderShortcutSyncBanner();
 
   if (emptyEl) emptyEl.style.display = shortcuts.length === 0 ? 'block' : 'none';
   if (scroller) scroller.style.display = shortcuts.length === 0 ? 'none' : 'block';
@@ -897,6 +964,44 @@ async function closeShortcutMenu() {
   if (!shortcutMenuOpenId) return;
   shortcutMenuOpenId = null;
   await renderQuickLinks();
+}
+
+function downloadTextFile(filename, content, mimeType) {
+  const blob = new Blob([content], {
+    type: mimeType || 'text/plain;charset=utf-8',
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+async function exportShortcutSyncFile() {
+  if (!hasShortcutCore()) return;
+
+  const repoPayload = getRepoShortcutSyncPayload();
+  const shortcuts = await getShortcuts();
+  const source = ShortcutCore.buildShortcutSyncSource(shortcuts, repoPayload.sourceId);
+  downloadTextFile('shortcuts.sync.js', source, 'text/javascript;charset=utf-8');
+  showToast('Downloaded shortcuts.sync.js');
+}
+
+async function useRepoShortcutVersion() {
+  if (!hasShortcutCore()) return;
+
+  const repoPayload = getRepoShortcutSyncPayload();
+  if (!repoPayload.shortcuts.length) return;
+  if (!window.confirm('Replace this computer\'s Start Here with the repo version? Unsynced local changes will be lost.')) {
+    return;
+  }
+
+  await applyRepoShortcutSnapshot(repoPayload);
+  await renderQuickLinks();
+  showToast('Applied repo shortcut snapshot');
 }
 
 function shouldUseShortcutLongPress(event) {
@@ -1883,6 +1988,16 @@ document.addEventListener('click', async (e) => {
 
   if (action === 'toggle-shortcut-menu') {
     await toggleShortcutMenu(actionEl.dataset.shortcutId || null);
+    return;
+  }
+
+  if (action === 'export-shortcut-sync-file') {
+    await exportShortcutSyncFile();
+    return;
+  }
+
+  if (action === 'use-repo-shortcut-version') {
+    await useRepoShortcutVersion();
     return;
   }
 

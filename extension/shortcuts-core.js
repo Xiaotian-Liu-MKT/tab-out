@@ -176,16 +176,177 @@
     };
   }
 
+  function normalizeShortcutSyncItem(input, fallbackId) {
+    const fallback = String(fallbackId || '').trim() || 'shortcut';
+    const record = buildShortcutRecord({
+      url: input && input.url,
+      title: input && input.title,
+      logoMode: input && input.logoMode,
+      logoDataUrl: input && input.logoDataUrl,
+      logoTransform: input && input.logoTransform,
+    }, {
+      id: String((input && input.id) || '').trim() || fallback,
+      createdAt: (input && input.createdAt) || '1970-01-01T00:00:00.000Z',
+    });
+
+    return {
+      id: String(record.id),
+      title: record.title,
+      url: record.url,
+      logoMode: record.logoMode,
+      logoDataUrl: record.logoDataUrl,
+      logoTransform: record.logoTransform,
+    };
+  }
+
+  function normalizeShortcutSyncItems(items) {
+    const list = Array.isArray(items) ? items : [];
+    return list
+      .map((item, index) => {
+        try {
+          return normalizeShortcutSyncItem(item, `shortcut-${index + 1}`);
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
+  }
+
+  function serializeShortcutSyncItems(items) {
+    return JSON.stringify(normalizeShortcutSyncItems(items));
+  }
+
+  function hashShortcutSyncString(input) {
+    let hash = 0x811c9dc5;
+    const text = String(input || '');
+
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 0x01000193);
+    }
+
+    return `sync_${(hash >>> 0).toString(16).padStart(8, '0')}`;
+  }
+
+  function getShortcutSyncSignature(items) {
+    return hashShortcutSyncString(serializeShortcutSyncItems(items));
+  }
+
+  function areShortcutSyncItemsEqual(left, right) {
+    return serializeShortcutSyncItems(left) === serializeShortcutSyncItems(right);
+  }
+
+  function resolveShortcutSyncState(input) {
+    const payload = input || {};
+    const repoItems = normalizeShortcutSyncItems(payload.repoItems);
+    const localItems = normalizeShortcutSyncItems(payload.localItems);
+    const repoSerialized = JSON.stringify(repoItems);
+    const localSerialized = JSON.stringify(localItems);
+    const repoSignature = hashShortcutSyncString(repoSerialized);
+    const localSignature = hashShortcutSyncString(localSerialized);
+    const lastAppliedRepoSignature = String(payload.lastAppliedRepoSignature || '').trim();
+
+    if (!repoItems.length) {
+      return {
+        mode: 'no-repo',
+        repoItems,
+        localItems,
+        repoSignature,
+        localSignature,
+        lastAppliedRepoSignature,
+      };
+    }
+
+    if (!localItems.length) {
+      return {
+        mode: 'apply-repo',
+        repoItems,
+        localItems,
+        repoSignature,
+        localSignature,
+        lastAppliedRepoSignature,
+      };
+    }
+
+    if (localSerialized === repoSerialized) {
+      return {
+        mode: 'clean',
+        repoItems,
+        localItems,
+        repoSignature,
+        localSignature,
+        lastAppliedRepoSignature,
+      };
+    }
+
+    if (
+      lastAppliedRepoSignature &&
+      localSignature === lastAppliedRepoSignature &&
+      repoSignature !== lastAppliedRepoSignature
+    ) {
+      return {
+        mode: 'apply-repo',
+        repoItems,
+        localItems,
+        repoSignature,
+        localSignature,
+        lastAppliedRepoSignature,
+      };
+    }
+
+    if (!lastAppliedRepoSignature || repoSignature === lastAppliedRepoSignature) {
+      return {
+        mode: 'dirty',
+        repoItems,
+        localItems,
+        repoSignature,
+        localSignature,
+        lastAppliedRepoSignature,
+      };
+    }
+
+    return {
+      mode: 'conflict',
+      repoItems,
+      localItems,
+      repoSignature,
+      localSignature,
+      lastAppliedRepoSignature,
+    };
+  }
+
+  function buildShortcutSyncSource(items, sourceId) {
+    const normalizedSourceId = String(sourceId || 'tab-out-sync').trim() || 'tab-out-sync';
+    const normalizedItems = normalizeShortcutSyncItems(items);
+    const renderedItems = JSON.stringify(normalizedItems, null, 2);
+
+    return [
+      '// Repo-tracked Start Here shortcut snapshot.',
+      '// Replace this file by exporting a fresh snapshot from the extension UI, then commit it.',
+      '',
+      `const SYNC_SHORTCUTS_SOURCE_ID = ${JSON.stringify(normalizedSourceId)};`,
+      `const SYNC_SHORTCUTS = ${renderedItems};`,
+      '',
+    ].join('\n');
+  }
+
   return {
     DEFAULT_SHORTCUT_LOGO_TRANSFORM,
+    areShortcutSyncItemsEqual,
     buildShortcutRecord,
+    buildShortcutSyncSource,
     getShortcutFaviconUrl,
     getShortcutInitial,
+    getShortcutSyncSignature,
     inferShortcutDomain,
     inferShortcutTitle,
     mergeShortcutImports,
     moveShortcutItem,
     normalizeShortcutLogoTransform,
+    normalizeShortcutSyncItem,
+    normalizeShortcutSyncItems,
     normalizeShortcutUrl,
+    resolveShortcutSyncState,
+    serializeShortcutSyncItems,
   };
 });

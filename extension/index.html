@@ -43,6 +43,17 @@
       </div>
     </div>
 
+    <div class="shortcut-sync-banner" id="shortcutSyncBanner" hidden>
+      <div class="shortcut-sync-copy">
+        <strong id="shortcutSyncTitle"></strong>
+        <span id="shortcutSyncText"></span>
+      </div>
+      <div class="shortcut-sync-actions">
+        <button type="button" class="ghost-btn shortcut-sync-export-btn" id="shortcutSyncExportBtn" data-action="export-shortcut-sync-file">Export sync file</button>
+        <button type="button" class="ghost-btn shortcut-sync-use-repo-btn" id="shortcutSyncUseRepoBtn" data-action="use-repo-shortcut-version" hidden>Use repo version</button>
+      </div>
+    </div>
+
     <div class="quick-links-empty" id="quickLinksEmpty" style="display:none">
       <strong>No shortcuts yet.</strong>
       Add the sites you reach for most and turn this tab into a proper launchpad.
@@ -235,6 +246,9 @@
 <!-- Personal config (gitignored) — defines LOCAL_LANDING_PAGE_PATTERNS etc. -->
 <!-- If the file doesn't exist, that's fine — app.js uses sensible defaults. -->
 <script src="config.local.js" onerror="/* no personal config, that's fine */"></script>
+
+<!-- Repo-tracked shortcut snapshot for cross-device sync -->
+<script src="shortcuts.sync.js"></script>
 
 <!-- Pure helpers shared between the extension page and Node tests -->
 <script src="shortcuts-core.js"></script>
