@@ -238,6 +238,7 @@
 
   function resolveShortcutSyncState(input) {
     const payload = input || {};
+    const hasRepoSnapshot = payload.hasRepoSnapshot !== false;
     const repoItems = normalizeShortcutSyncItems(payload.repoItems);
     const localItems = normalizeShortcutSyncItems(payload.localItems);
     const repoSerialized = JSON.stringify(repoItems);
@@ -246,20 +247,9 @@
     const localSignature = hashShortcutSyncString(localSerialized);
     const lastAppliedRepoSignature = String(payload.lastAppliedRepoSignature || '').trim();
 
-    if (!repoItems.length) {
+    if (!hasRepoSnapshot) {
       return {
         mode: 'no-repo',
-        repoItems,
-        localItems,
-        repoSignature,
-        localSignature,
-        lastAppliedRepoSignature,
-      };
-    }
-
-    if (!localItems.length) {
-      return {
-        mode: 'apply-repo',
         repoItems,
         localItems,
         repoSignature,
@@ -279,34 +269,8 @@
       };
     }
 
-    if (
-      lastAppliedRepoSignature &&
-      localSignature === lastAppliedRepoSignature &&
-      repoSignature !== lastAppliedRepoSignature
-    ) {
-      return {
-        mode: 'apply-repo',
-        repoItems,
-        localItems,
-        repoSignature,
-        localSignature,
-        lastAppliedRepoSignature,
-      };
-    }
-
-    if (!lastAppliedRepoSignature || repoSignature === lastAppliedRepoSignature) {
-      return {
-        mode: 'dirty',
-        repoItems,
-        localItems,
-        repoSignature,
-        localSignature,
-        lastAppliedRepoSignature,
-      };
-    }
-
     return {
-      mode: 'conflict',
+      mode: 'apply-repo',
       repoItems,
       localItems,
       repoSignature,

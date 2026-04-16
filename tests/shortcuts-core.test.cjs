@@ -227,7 +227,22 @@ test('resolveShortcutSyncState reports clean when local matches repo', () => {
   assert.equal(resolved.mode, 'clean');
 });
 
-test('resolveShortcutSyncState reports dirty when repo is unchanged and local diverges', () => {
+test('resolveShortcutSyncState treats a missing repo snapshot as no-repo', () => {
+  const localItems = [
+    { id: 'shortcut-1', title: 'Claude', url: 'https://claude.ai/' },
+  ];
+
+  const resolved = resolveShortcutSyncState({
+    hasRepoSnapshot: false,
+    repoItems: [],
+    localItems,
+    lastAppliedRepoSignature: getShortcutSyncSignature(localItems),
+  });
+
+  assert.equal(resolved.mode, 'no-repo');
+});
+
+test('resolveShortcutSyncState applies the repo snapshot when local diverges', () => {
   const repoItems = [
     { id: 'shortcut-1', title: 'Claude', url: 'https://claude.ai/' },
   ];
@@ -244,50 +259,39 @@ test('resolveShortcutSyncState reports dirty when repo is unchanged and local di
     lastAppliedRepoSignature,
   });
 
-  assert.equal(resolved.mode, 'dirty');
+  assert.equal(resolved.mode, 'apply-repo');
 });
 
-test('resolveShortcutSyncState auto-applies repo when local still matches last applied repo', () => {
-  const previousItems = [
+test('resolveShortcutSyncState applies the repo snapshot even without a previous signature', () => {
+  const repoItems = [
     { id: 'shortcut-1', title: 'Claude', url: 'https://claude.ai/' },
+    { id: 'shortcut-2', title: 'ChatGPT', url: 'https://chatgpt.com/' },
   ];
-  const repoItems = previousItems.concat({
-    id: 'shortcut-2',
-    title: 'ChatGPT',
-    url: 'https://chatgpt.com/',
-  });
+  const localItems = [
+    { id: 'shortcut-9', title: 'GitHub', url: 'https://github.com/' },
+  ];
 
   const resolved = resolveShortcutSyncState({
     repoItems,
-    localItems: previousItems,
-    lastAppliedRepoSignature: getShortcutSyncSignature(previousItems),
+    localItems,
+    lastAppliedRepoSignature: '',
   });
 
   assert.equal(resolved.mode, 'apply-repo');
 });
 
-test('resolveShortcutSyncState reports conflict when both repo and local diverge', () => {
+test('resolveShortcutSyncState auto-applies an empty repo snapshot when local matches the last applied repo', () => {
   const previousItems = [
     { id: 'shortcut-1', title: 'Claude', url: 'https://claude.ai/' },
   ];
-  const repoItems = previousItems.concat({
-    id: 'shortcut-2',
-    title: 'ChatGPT',
-    url: 'https://chatgpt.com/',
-  });
-  const localItems = previousItems.concat({
-    id: 'shortcut-3',
-    title: 'GitHub',
-    url: 'https://github.com/',
-  });
 
   const resolved = resolveShortcutSyncState({
-    repoItems,
-    localItems,
+    repoItems: [],
+    localItems: previousItems,
     lastAppliedRepoSignature: getShortcutSyncSignature(previousItems),
   });
 
-  assert.equal(resolved.mode, 'conflict');
+  assert.equal(resolved.mode, 'apply-repo');
 });
 
 test('buildShortcutSyncSource renders a repo-ready sync file', () => {
